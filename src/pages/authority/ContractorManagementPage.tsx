@@ -22,11 +22,67 @@ import { StatusBadge } from '../../components/common/StatusBadge';
 import { Contractor } from '../../types';
 
 export const ContractorManagementPage: React.FC = () => {
-  const { contractors, setCurrentPage, reports } = useApp();
+  const { contractors, setCurrentPage, addContractor } = useApp();
 
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [showAddModal, setShowAddModal] = useState(false);
+  const [isAddingContractor, setIsAddingContractor] = useState(false);
+  const [addError, setAddError] = useState<string | null>(null);
+  const [newContractor, setNewContractor] = useState({
+    contractorName: '',
+    companyName: '',
+    assignedRoad: '',
+    phone: '',
+    email: '',
+    zone: '',
+    maintenanceStartDate: '2026-01-01',
+    maintenanceExpiryDate: '2027-12-31',
+  });
+
+  const resetContractorForm = () => {
+    setNewContractor({
+      contractorName: '',
+      companyName: '',
+      assignedRoad: '',
+      phone: '',
+      email: '',
+      zone: '',
+      maintenanceStartDate: '2026-01-01',
+      maintenanceExpiryDate: '2027-12-31',
+    });
+    setAddError(null);
+  };
+
+  const handleAddContractor = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (isAddingContractor) return;
+
+    setAddError(null);
+    setIsAddingContractor(true);
+
+    try {
+      await addContractor({
+        contractorName: newContractor.contractorName.trim(),
+        companyName: newContractor.companyName.trim(),
+        assignedRoads: [newContractor.assignedRoad.trim()],
+        maintenanceStartDate: newContractor.maintenanceStartDate,
+        maintenanceExpiryDate: newContractor.maintenanceExpiryDate,
+        phone: newContractor.phone.trim() || undefined,
+        email: newContractor.email.trim() || undefined,
+        zone: newContractor.zone.trim() || undefined,
+        contractStatus: 'active',
+      });
+
+      resetContractorForm();
+      setShowAddModal(false);
+    } catch (error) {
+      console.error('Failed to register contractor:', error);
+      setAddError('Contractor could not be registered. Please try again.');
+    } finally {
+      setIsAddingContractor(false);
+    }
+  };
 
   const filteredContractors = contractors.filter((c) => {
     if (statusFilter !== 'all' && c.contractStatus !== statusFilter) return false;
@@ -276,7 +332,10 @@ export const ContractorManagementPage: React.FC = () => {
             <div className="flex items-center justify-between border-b border-slate-100 pb-3">
               <h3 className="text-base font-bold text-slate-900">Enlist Road Maintenance Contractor</h3>
               <button
-                onClick={() => setShowAddModal(false)}
+                onClick={() => {
+                  resetContractorForm();
+                  setShowAddModal(false);
+                }}
                 className="rounded-lg p-1 text-slate-400 hover:bg-slate-100"
               >
                 <X className="h-5 w-5" />
@@ -286,36 +345,103 @@ export const ContractorManagementPage: React.FC = () => {
               Contractor onboarding is verified via NHAI & Ministry of Road Transport credentials.
             </p>
             <form
-              onSubmit={(e) => {
-                e.preventDefault();
-                setShowAddModal(false);
-              }}
+              onSubmit={handleAddContractor}
               className="space-y-3 text-xs"
             >
+              <div>
+                <label className="block font-semibold text-slate-700 mb-1">Contractor Name</label>
+                <input
+                  type="text"
+                  value={newContractor.contractorName}
+                  onChange={(e) =>
+                    setNewContractor((prev) => ({ ...prev, contractorName: e.target.value }))
+                  }
+                  placeholder="e.g. Rajesh Sharma"
+                  className="w-full rounded-xl border border-slate-300 p-2.5 text-xs text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-600/20"
+                  required
+                />
+              </div>
+
               <div>
                 <label className="block font-semibold text-slate-700 mb-1">Company Name</label>
                 <input
                   type="text"
+                  value={newContractor.companyName}
+                  onChange={(e) =>
+                    setNewContractor((prev) => ({ ...prev, companyName: e.target.value }))
+                  }
                   placeholder="e.g. National Highways Roadtech Ltd"
                   className="w-full rounded-xl border border-slate-300 p-2.5 text-xs text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-600/20"
                   required
                 />
               </div>
+
               <div>
                 <label className="block font-semibold text-slate-700 mb-1">Assigned Highway Stretch</label>
                 <input
                   type="text"
+                  value={newContractor.assignedRoad}
+                  onChange={(e) =>
+                    setNewContractor((prev) => ({ ...prev, assignedRoad: e.target.value }))
+                  }
                   placeholder="e.g. NH-48 Sector 21 to Rajiv Chowk"
                   className="w-full rounded-xl border border-slate-300 p-2.5 text-xs text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-600/20"
                   required
                 />
               </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="block font-semibold text-slate-700 mb-1">Phone (Optional)</label>
+                  <input
+                    type="tel"
+                    value={newContractor.phone}
+                    onChange={(e) =>
+                      setNewContractor((prev) => ({ ...prev, phone: e.target.value }))
+                    }
+                    placeholder="+91 98XXXXXXXX"
+                    className="w-full rounded-xl border border-slate-300 p-2.5 text-xs text-slate-900"
+                  />
+                </div>
+                <div>
+                  <label className="block font-semibold text-slate-700 mb-1">Email (Optional)</label>
+                  <input
+                    type="email"
+                    value={newContractor.email}
+                    onChange={(e) =>
+                      setNewContractor((prev) => ({ ...prev, email: e.target.value }))
+                    }
+                    placeholder="contractor@example.com"
+                    className="w-full rounded-xl border border-slate-300 p-2.5 text-xs text-slate-900"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block font-semibold text-slate-700 mb-1">Zone (Optional)</label>
+                <input
+                  type="text"
+                  value={newContractor.zone}
+                  onChange={(e) =>
+                    setNewContractor((prev) => ({ ...prev, zone: e.target.value }))
+                  }
+                  placeholder="e.g. Delhi NCR - Zone 1"
+                  className="w-full rounded-xl border border-slate-300 p-2.5 text-xs text-slate-900"
+                />
+              </div>
+
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="block font-semibold text-slate-700 mb-1">Contract Start Date</label>
                   <input
                     type="date"
-                    defaultValue="2026-01-01"
+                    value={newContractor.maintenanceStartDate}
+                    onChange={(e) =>
+                      setNewContractor((prev) => ({
+                        ...prev,
+                        maintenanceStartDate: e.target.value,
+                      }))
+                    }
                     className="w-full rounded-xl border border-slate-300 p-2 text-xs"
                     required
                   />
@@ -324,25 +450,43 @@ export const ContractorManagementPage: React.FC = () => {
                   <label className="block font-semibold text-slate-700 mb-1">Expiry Date</label>
                   <input
                     type="date"
-                    defaultValue="2027-12-31"
+                    value={newContractor.maintenanceExpiryDate}
+                    onChange={(e) =>
+                      setNewContractor((prev) => ({
+                        ...prev,
+                        maintenanceExpiryDate: e.target.value,
+                      }))
+                    }
                     className="w-full rounded-xl border border-slate-300 p-2 text-xs"
                     required
                   />
                 </div>
               </div>
+
+              {addError && (
+                <div className="rounded-xl border border-rose-200 bg-rose-50 px-3 py-2 text-xs font-medium text-rose-700">
+                  {addError}
+                </div>
+              )}
+
               <div className="flex justify-end gap-2 pt-2 border-t border-slate-100">
                 <button
                   type="button"
-                  onClick={() => setShowAddModal(false)}
-                  className="rounded-xl border border-slate-200 px-4 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-50"
+                  onClick={() => {
+                    resetContractorForm();
+                    setShowAddModal(false);
+                  }}
+                  disabled={isAddingContractor}
+                  className="rounded-xl border border-slate-200 px-4 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-50 disabled:opacity-50"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="rounded-xl bg-blue-700 px-4 py-2 text-xs font-bold text-white hover:bg-blue-800"
+                  disabled={isAddingContractor}
+                  className="rounded-xl bg-blue-700 px-4 py-2 text-xs font-bold text-white hover:bg-blue-800 disabled:opacity-50"
                 >
-                  Register Contract
+                  {isAddingContractor ? 'Registering...' : 'Register Contract'}
                 </button>
               </div>
             </form>

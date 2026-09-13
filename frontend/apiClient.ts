@@ -121,6 +121,32 @@ export const apiClient = {
     return [];
   },
 
+  async createContractor(contractorData: {
+    contractorName: string;
+    companyName: string;
+    assignedRoads: string[];
+    maintenanceStartDate: string;
+    maintenanceExpiryDate: string;
+    phone?: string;
+    email?: string;
+    zone?: string;
+    contractStatus?: Contractor['contractStatus'];
+  }): Promise<Contractor> {
+    const res = await fetch('/api/contractors', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(contractorData),
+    });
+
+    const json = await res.json();
+
+    if (!res.ok || !json.success) {
+      throw new Error(json.error || `Failed to create contractor: ${res.statusText}`);
+    }
+
+    return json.data;
+  },
+
   async getEmailAlerts(): Promise<EmailAlertLog[]> {
     try {
       const res = await fetch('/api/notifications/emails');
