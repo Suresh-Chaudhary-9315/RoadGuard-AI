@@ -120,7 +120,7 @@ export const ReportController = {
             status: 'reported',
             timestamp,
             title: 'Pothole Reported',
-            description: 'Citizen report logged in the RoadGuard database.',
+            description: 'Citizen report logged in the Terra Scan AI database.',
             actor: user.name,
           },
         ],

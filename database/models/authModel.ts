@@ -140,7 +140,7 @@ export const AuthModel = {
     const now = new Date().toISOString();
     const adminDoc: UserDoc = {
       id: existing?.id || 'ADM-ROADGUARD-ROOT',
-      name: process.env.ADMIN_NAME?.trim() || 'RoadGuard Administrator',
+      name: process.env.ADMIN_NAME?.trim() || 'Terra Scan AI Administrator',
       email: normalizedEmail,
       phone: process.env.ADMIN_PHONE?.trim() || '',
       passwordHash: hashPassword(password),

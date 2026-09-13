@@ -61,7 +61,7 @@ export const Navbar: React.FC = () => {
           </div>
           <div>
             <div className="flex items-center gap-1.5">
-              <span className="text-lg font-bold tracking-tight text-slate-900">RoadGuard <span className="text-blue-700">AI</span></span>
+              <span className="text-lg font-bold tracking-tight text-slate-900">Terra Scan<span className="text-blue-700">AI</span></span>
               <span className="rounded border border-blue-200 bg-blue-50 px-1.5 py-0.5 text-[10px] font-semibold tracking-wide text-blue-700">SIH</span>
             </div>
             <p className="hidden text-[11px] font-medium text-slate-500 sm:block">Intelligent Road Damage & Maintenance</p>

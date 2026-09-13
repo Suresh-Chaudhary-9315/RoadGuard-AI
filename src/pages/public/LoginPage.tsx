@@ -75,7 +75,7 @@ export const LoginPage: React.FC = () => {
         <div className="rounded-2xl border border-slate-200 bg-white p-7 shadow-sm">
           {role === 'authority' && (
             <div className="mb-4 rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2.5 text-xs text-emerald-800">
-              Authority accounts cannot be created publicly. Your RoadGuard administrator must provision the account first.
+              Authority accounts cannot be created publicly. Your Terra Scan AI administrator must provision the account first.
             </div>
           )}
           {role === 'admin' && (

@@ -54,7 +54,7 @@ export const LandingPage: React.FC = () => {
             </div>
 
             <p className="mt-4 text-xs text-slate-400">
-              Authority registration is intentionally unavailable to the public. Authority accounts are provisioned by the RoadGuard administrator.
+              Authority registration is intentionally unavailable to the public. Authority accounts are provisioned by the Terra Scan AI administrator.
             </p>
           </div>
 
@@ -65,7 +65,7 @@ export const LandingPage: React.FC = () => {
                   <ShieldAlert className="h-5 w-5" />
                 </div>
                 <div>
-                  <div className="font-bold">RoadGuard Secure Workflow</div>
+                  <div className="font-bold">Terra Scan AI Secure Workflow</div>
                   <div className="text-xs text-slate-400">Role-based access • persistent MongoDB</div>
                 </div>
               </div>
