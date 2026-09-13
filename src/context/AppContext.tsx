@@ -79,6 +79,17 @@ interface AppContextType {
     status: ReportStatus,
     notes?: string
   ) => Promise<void>;
+  addContractor: (contractorData: {
+    contractorName: string;
+    companyName: string;
+    assignedRoads: string[];
+    maintenanceStartDate: string;
+    maintenanceExpiryDate: string;
+    phone?: string;
+    email?: string;
+    zone?: string;
+    contractStatus?: Contractor['contractStatus'];
+  }) => Promise<Contractor>;
   // Stats
   authorityStats: {
     totalReported: number;
@@ -282,6 +293,30 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }
   };
 
+  const addContractor = async (contractorData: {
+    contractorName: string;
+    companyName: string;
+    assignedRoads: string[];
+    maintenanceStartDate: string;
+    maintenanceExpiryDate: string;
+    phone?: string;
+    email?: string;
+    zone?: string;
+    contractStatus?: Contractor['contractStatus'];
+  }): Promise<Contractor> => {
+    try {
+      const created = await apiClient.createContractor(contractorData);
+      setContractors((prev) => [
+        created,
+        ...prev.filter((contractor) => contractor.id !== created.id),
+      ]);
+      return created;
+    } catch (error) {
+      console.error('Contractor creation failed:', error);
+      throw new Error('Could not register contractor. Please try again.');
+    }
+  };
+
   const assignContractor = async (
     reportId: string,
     contractorId: string,
@@ -373,6 +408,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         switchRole,
         addReport,
         verifyReport,
+        addContractor,
         assignContractor,
         updateReportStatus,
         authorityStats,
