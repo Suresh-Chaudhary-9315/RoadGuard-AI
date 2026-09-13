@@ -3,21 +3,27 @@ import path from 'path';
 import dotenv from 'dotenv';
 import { createServer as createViteServer } from 'vite';
 import apiRoutes from './backend/routes/apiRoutes';
+import { AuthModel } from './database/models/authModel';
 
 dotenv.config();
 
 async function startServer() {
   const app = express();
-  const PORT = Number(process.env.PORT) || 3000;;
+  const PORT = Number(process.env.PORT) || 3000;
 
-  // Request parsers
   app.use(express.json({ limit: '50mb' }));
   app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 
-  // Mount backend API routes FIRST
+  // Provision/update the single administrator account from secure environment
+  // variables. No public admin or authority signup endpoint exists.
+  try {
+    await AuthModel.ensureAdminFromEnv();
+  } catch (error: any) {
+    console.error('[Auth] Admin initialization failed:', error?.message || error);
+  }
+
   app.use('/api', apiRoutes);
 
-  // Vite middleware for SPA serving
   if (process.env.NODE_ENV !== 'production') {
     const vite = await createViteServer({
       server: { middlewareMode: true },
@@ -33,8 +39,8 @@ async function startServer() {
   }
 
   app.listen(PORT, '0.0.0.0', () => {
-    console.log(`[RoadGuard AI] Fullstack Server running on http://0.0.0.0:${PORT}`);
-    console.log('[RoadGuard AI] MongoDB Database & Authority Email Alert dispatch layer active.');
+    console.log(`[RoadGuard AI] Fullstack server running on http://0.0.0.0:${PORT}`);
+    console.log('[RoadGuard AI] MongoDB, authenticated role access, and authority email dispatch active.');
   });
 }
 

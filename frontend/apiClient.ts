@@ -1,4 +1,12 @@
-import { PotholeReport, Contractor, LocationData, PotholeSeverity, ReportStatus, Priority } from '../src/types';
+import {
+  PotholeReport,
+  Contractor,
+  LocationData,
+  PotholeSeverity,
+  ReportStatus,
+  Priority,
+  UserRole,
+} from '../src/types';
 
 export interface EmailAlertLog {
   id: string;
@@ -22,29 +30,93 @@ export interface DatabaseStatus {
   database: string;
 }
 
+export interface AuthUser {
+  id: string;
+  name: string;
+  email: string;
+  phone: string;
+  role: UserRole;
+  agency?: string;
+  active: boolean;
+}
+
+async function readJson(res: Response): Promise<any> {
+  const json = await res.json().catch(() => ({}));
+  if (!res.ok || json.success === false) {
+    throw new Error(json.error || `Request failed with status ${res.status}`);
+  }
+  return json;
+}
+
+function jsonFetch(url: string, init: RequestInit = {}) {
+  return fetch(url, {
+    credentials: 'include',
+    ...init,
+    headers: {
+      ...(init.body ? { 'Content-Type': 'application/json' } : {}),
+      ...(init.headers || {}),
+    },
+  });
+}
+
 export const apiClient = {
   async getDatabaseStatus(): Promise<DatabaseStatus> {
     try {
-      const res = await fetch('/api/database/status');
-      const json = await res.json();
-      return json.database || { type: 'MongoDB', connected: true, database: 'roadguard_ai' };
+      const res = await jsonFetch('/api/database/status');
+      const json = await readJson(res);
+      return json.database || { type: 'MongoDB', connected: false, database: 'roadguard_ai' };
     } catch {
-      return { type: 'MongoDB (Client Fallback)', connected: true, database: 'roadguard_ai' };
+      return { type: 'MongoDB', connected: false, database: 'roadguard_ai' };
     }
   },
 
-  async getReports(citizenId?: string): Promise<PotholeReport[]> {
+  async getCurrentUser(): Promise<AuthUser | null> {
     try {
-      const query = citizenId ? `?citizenId=${encodeURIComponent(citizenId)}` : '';
-      const res = await fetch(`/api/reports${query}`);
-      const json = await res.json();
-      if (json.success && Array.isArray(json.data)) {
-        return json.data;
-      }
-    } catch (e) {
-      console.warn('Could not fetch reports from backend API, using client fallback', e);
+      const res = await jsonFetch('/api/auth/me');
+      if (res.status === 401) return null;
+      const json = await readJson(res);
+      return json.data || null;
+    } catch {
+      return null;
     }
-    return [];
+  },
+
+  async login(input: {
+    email: string;
+    password: string;
+    expectedRole: UserRole;
+  }): Promise<AuthUser> {
+    const res = await jsonFetch('/api/auth/login', {
+      method: 'POST',
+      body: JSON.stringify(input),
+    });
+    const json = await readJson(res);
+    return json.data;
+  },
+
+  async registerCitizen(input: {
+    name: string;
+    email: string;
+    phone: string;
+    password: string;
+  }): Promise<AuthUser> {
+    const res = await jsonFetch('/api/auth/register/citizen', {
+      method: 'POST',
+      body: JSON.stringify(input),
+    });
+    const json = await readJson(res);
+    return json.data;
+  },
+
+  async logout(): Promise<void> {
+    const res = await jsonFetch('/api/auth/logout', { method: 'POST' });
+    await readJson(res);
+  },
+
+  async getReports(): Promise<PotholeReport[]> {
+    const res = await jsonFetch('/api/reports');
+    const json = await readJson(res);
+    return Array.isArray(json.data) ? json.data : [];
   },
 
   async createReport(reportData: {
@@ -56,26 +128,15 @@ export const apiClient = {
     location: LocationData;
     aiAnalysis: any;
     customAuthorityEmail?: string;
-    reportedBy: {
-      name: string;
-      phone: string;
-      citizenId: string;
-    };
-  }): Promise<{ report: PotholeReport; emailAlert: EmailAlertLog }> {
-    const res = await fetch('/api/reports', {
+  }): Promise<{ report: PotholeReport; emailAlert?: EmailAlertLog | null }> {
+    const res = await jsonFetch('/api/reports', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(reportData),
     });
-
-    if (!res.ok) {
-      throw new Error(`Failed to create report: ${res.statusText}`);
-    }
-
-    const json = await res.json();
+    const json = await readJson(res);
     return {
       report: json.data,
-      emailAlert: json.emailAlert,
+      emailAlert: json.emailAlert || null,
     };
   },
 
@@ -85,14 +146,11 @@ export const apiClient = {
     note?: string,
     actor?: string
   ): Promise<PotholeReport> {
-    const res = await fetch(`/api/reports/${id}/status`, {
+    const res = await jsonFetch(`/api/reports/${id}/status`, {
       method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ status, note, actor }),
     });
-
-    const json = await res.json();
-    if (!json.success) throw new Error(json.error || 'Failed to update status');
+    const json = await readJson(res);
     return json.data;
   },
 
@@ -103,28 +161,18 @@ export const apiClient = {
     priority: Priority,
     deadline: string
   ): Promise<PotholeReport> {
-    const res = await fetch(`/api/reports/${id}/assign`, {
+    const res = await jsonFetch(`/api/reports/${id}/assign`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ contractorId, contractorName, priority, deadline }),
     });
-
-    const json = await res.json();
-    if (!json.success) throw new Error(json.error || 'Failed to assign contractor');
+    const json = await readJson(res);
     return json.data;
   },
 
   async getContractors(): Promise<Contractor[]> {
-    try {
-      const res = await fetch('/api/contractors');
-      const json = await res.json();
-      if (json.success && Array.isArray(json.data)) {
-        return json.data;
-      }
-    } catch (e) {
-      console.warn('Could not fetch contractors from backend API', e);
-    }
-    return [];
+    const res = await jsonFetch('/api/contractors');
+    const json = await readJson(res);
+    return Array.isArray(json.data) ? json.data : [];
   },
 
   async createContractor(contractorData: {
@@ -138,41 +186,56 @@ export const apiClient = {
     zone?: string;
     contractStatus?: Contractor['contractStatus'];
   }): Promise<Contractor> {
-    const res = await fetch('/api/contractors', {
+    const res = await jsonFetch('/api/contractors', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(contractorData),
     });
-
-    const json = await res.json();
-
-    if (!res.ok || !json.success) {
-      throw new Error(json.error || `Failed to create contractor: ${res.statusText}`);
-    }
-
+    const json = await readJson(res);
     return json.data;
   },
 
   async getEmailAlerts(): Promise<EmailAlertLog[]> {
-    try {
-      const res = await fetch('/api/notifications/emails');
-      const json = await res.json();
-      if (json.success && Array.isArray(json.data)) {
-        return json.data;
-      }
-    } catch (e) {
-      console.warn('Could not fetch emails from backend API', e);
-    }
-    return [];
+    const res = await jsonFetch('/api/notifications/emails');
+    const json = await readJson(res);
+    return Array.isArray(json.data) ? json.data : [];
   },
 
   async triggerTestEmail(email?: string): Promise<EmailAlertLog> {
-    const res = await fetch('/api/notifications/test-email', {
+    const res = await jsonFetch('/api/notifications/test-email', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ email }),
     });
-    const json = await res.json();
+    const json = await readJson(res);
+    return json.data;
+  },
+
+  async getAuthorities(): Promise<AuthUser[]> {
+    const res = await jsonFetch('/api/admin/authorities');
+    const json = await readJson(res);
+    return Array.isArray(json.data) ? json.data : [];
+  },
+
+  async createAuthority(input: {
+    name: string;
+    email: string;
+    phone: string;
+    password: string;
+    agency: string;
+  }): Promise<AuthUser> {
+    const res = await jsonFetch('/api/admin/authorities', {
+      method: 'POST',
+      body: JSON.stringify(input),
+    });
+    const json = await readJson(res);
+    return json.data;
+  },
+
+  async setAuthorityActive(id: string, active: boolean): Promise<AuthUser> {
+    const res = await jsonFetch(`/api/admin/authorities/${id}/active`, {
+      method: 'PATCH',
+      body: JSON.stringify({ active }),
+    });
+    const json = await readJson(res);
     return json.data;
   },
 };

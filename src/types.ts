@@ -1,4 +1,4 @@
-export type UserRole = 'citizen' | 'authority';
+export type UserRole = 'citizen' | 'authority' | 'admin';
 
 export type PotholeSeverity = 'minor' | 'moderate' | 'severe';
 
@@ -128,4 +128,6 @@ export type NavigationPage =
   | 'pothole-management'
   | 'contractor-management'
   | 'maintenance-tracking'
-  | 'authority-report-details';
+  | 'authority-report-details'
+  // Admin
+  | 'admin-dashboard';

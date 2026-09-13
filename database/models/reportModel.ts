@@ -83,6 +83,14 @@ export const ReportModel = {
     return doc;
   },
 
+  async setEmailAlertSent(id: string, sent: boolean): Promise<void> {
+    const { collection } = await getDatabase();
+    await collection('reports').updateOne(
+      { id },
+      { $set: { emailAlertSent: sent } }
+    );
+  },
+
   async updateStatus(
     id: string,
     status: PotholeReportDoc['status'],

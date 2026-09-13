@@ -14,15 +14,40 @@ import { PotholeManagementPage } from './pages/authority/PotholeManagementPage';
 import { ContractorManagementPage } from './pages/authority/ContractorManagementPage';
 import { MaintenanceTrackingPage } from './pages/authority/MaintenanceTrackingPage';
 import { AuthorityReportDetailsPage } from './pages/authority/AuthorityReportDetailsPage';
+import { AdminDashboard } from './pages/admin/AdminDashboard';
 import { AuthorityEmailInboxModal } from './components/common/AuthorityEmailInboxModal';
 import { EmailSentToast } from './components/common/EmailSentToast';
-import { ShieldCheck, Heart } from 'lucide-react';
+import { Loader2, LockKeyhole } from 'lucide-react';
+import { NavigationPage, UserRole } from './types';
+
+const CITIZEN_PAGES: NavigationPage[] = [
+  'user-dashboard',
+  'report-pothole',
+  'camera-detection',
+  'my-reports',
+  'report-details',
+];
+
+const AUTHORITY_PAGES: NavigationPage[] = [
+  'authority-dashboard',
+  'pothole-management',
+  'contractor-management',
+  'maintenance-tracking',
+  'authority-report-details',
+];
+
+function requiredRole(page: NavigationPage): UserRole | null {
+  if (CITIZEN_PAGES.includes(page)) return 'citizen';
+  if (AUTHORITY_PAGES.includes(page)) return 'authority';
+  if (page === 'admin-dashboard') return 'admin';
+  return null;
+}
 
 const AppContent: React.FC = () => {
   const {
     currentPage,
-    userRole,
-    switchRole,
+    currentUser,
+    authLoading,
     setCurrentPage,
     emailAlerts,
     lastEmailAlert,
@@ -32,16 +57,51 @@ const AppContent: React.FC = () => {
   } = useApp();
 
   const renderCurrentView = () => {
+    if (authLoading) {
+      return (
+        <div className="flex min-h-[65vh] items-center justify-center text-sm text-slate-500">
+          <Loader2 className="mr-2 h-5 w-5 animate-spin text-blue-700" /> Restoring secure session...
+        </div>
+      );
+    }
+
+    const roleNeeded = requiredRole(currentPage);
+    if (roleNeeded && !currentUser) {
+      return <LoginPage />;
+    }
+    if (roleNeeded && currentUser?.role !== roleNeeded) {
+      return (
+        <div className="mx-auto flex min-h-[65vh] max-w-xl items-center justify-center px-4 text-center">
+          <div className="rounded-2xl border border-slate-200 bg-white p-8 shadow-sm">
+            <LockKeyhole className="mx-auto h-9 w-9 text-rose-600" />
+            <h2 className="mt-4 text-xl font-black text-slate-900">Access restricted</h2>
+            <p className="mt-2 text-sm text-slate-500">Your authenticated account does not have permission to open this dashboard.</p>
+            <button
+              onClick={() =>
+                setCurrentPage(
+                  currentUser?.role === 'authority'
+                    ? 'authority-dashboard'
+                    : currentUser?.role === 'admin'
+                    ? 'admin-dashboard'
+                    : 'user-dashboard'
+                )
+              }
+              className="mt-5 rounded-xl bg-blue-700 px-4 py-2 text-sm font-bold text-white hover:bg-blue-800"
+            >
+              Return to my dashboard
+            </button>
+          </div>
+        </div>
+      );
+    }
+
     switch (currentPage) {
-      // Public / Auth Views
       case 'landing':
         return <LandingPage />;
       case 'login':
         return <LoginPage />;
       case 'register':
         return <RegisterPage />;
-
-      // Citizen Views
       case 'user-dashboard':
         return <UserDashboard />;
       case 'report-pothole':
@@ -52,8 +112,6 @@ const AppContent: React.FC = () => {
         return <MyReportsPage />;
       case 'report-details':
         return <ReportDetailsPage />;
-
-      // Authority Views
       case 'authority-dashboard':
         return <AuthorityDashboard />;
       case 'pothole-management':
@@ -64,77 +122,39 @@ const AppContent: React.FC = () => {
         return <MaintenanceTrackingPage />;
       case 'authority-report-details':
         return <AuthorityReportDetailsPage />;
-
+      case 'admin-dashboard':
+        return <AdminDashboard />;
       default:
-        return userRole === 'citizen' ? <UserDashboard /> : <AuthorityDashboard />;
+        return <LandingPage />;
     }
   };
 
   return (
-    <div className="min-h-screen flex flex-col bg-slate-50 text-slate-900 font-sans antialiased selection:bg-blue-100 selection:text-blue-900">
+    <div className="flex min-h-screen flex-col bg-slate-50 font-sans text-slate-900 antialiased selection:bg-blue-100 selection:text-blue-900">
       <Navbar />
+      <main className="flex-1 pb-12">{renderCurrentView()}</main>
 
-      <main className="flex-1 pb-16">
-        {renderCurrentView()}
-      </main>
+      {currentUser?.role === 'authority' && (
+        <AuthorityEmailInboxModal
+          isOpen={isEmailInboxOpen}
+          onClose={() => setIsEmailInboxOpen(false)}
+          emailAlerts={emailAlerts}
+        />
+      )}
 
-      {/* Global Email Dispatches Modal */}
-      <AuthorityEmailInboxModal
-        isOpen={isEmailInboxOpen}
-        onClose={() => setIsEmailInboxOpen(false)}
-        emailAlerts={emailAlerts}
-      />
-
-      {/* Real-time Email Dispatched Toast */}
       <EmailSentToast
         emailAlert={lastEmailAlert}
         onDismiss={clearLastEmailAlert}
         onViewInbox={() => setIsEmailInboxOpen(true)}
       />
 
-      {/* Clean, Minimalist Footer */}
       <footer className="border-t border-slate-200 bg-white py-6 text-xs text-slate-500">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between gap-4">
-          <div className="flex items-center gap-2">
-            <div className="flex h-6 w-6 items-center justify-center rounded-lg bg-blue-700 text-white font-black text-xs">
-              RG
-            </div>
-            <span className="font-bold text-slate-900">RoadGuard AI</span>
-            <span className="text-slate-300">|</span>
-            <span>Intelligent Road Asset Management</span>
-          </div>
-
-          <div className="flex items-center gap-4 text-[11px]">
-            <button
-              onClick={() => {
-                switchRole('citizen');
-                setCurrentPage('user-dashboard');
-              }}
-              className={`hover:text-blue-700 font-semibold ${userRole === 'citizen' ? 'text-blue-700' : ''}`}
-            >
-              Citizen Dashboard
-            </button>
-            <span>•</span>
-            <button
-              onClick={() => {
-                switchRole('authority');
-                setCurrentPage('authority-dashboard');
-              }}
-              className={`hover:text-blue-700 font-semibold ${userRole === 'authority' ? 'text-blue-700' : ''}`}
-            >
-              Authority Console
-            </button>
-            <span>•</span>
-            <button
-              onClick={() => setCurrentPage('contractor-management')}
-              className="hover:text-blue-700"
-            >
-              Contractor Tenures
-            </button>
-          </div>
-
-          <div className="text-[11px] text-slate-400">
-            Municipal Road Maintenance & Citizen Grievance Portal
+        <div className="mx-auto flex max-w-7xl flex-col items-center justify-between gap-3 px-4 sm:flex-row sm:px-6 lg:px-8">
+          <div className="font-semibold text-slate-700">RoadGuard AI • Intelligent Road Asset Management</div>
+          <div className="flex items-center gap-4">
+            <button onClick={() => setCurrentPage('landing')} className="hover:text-blue-700">Prototype Overview</button>
+            {!currentUser && <button onClick={() => setCurrentPage('login')} className="hover:text-blue-700">Sign In</button>}
+            {!currentUser && <button onClick={() => setCurrentPage('register')} className="hover:text-blue-700">Citizen Sign Up</button>}
           </div>
         </div>
       </footer>
