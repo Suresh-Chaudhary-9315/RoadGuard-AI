@@ -5,10 +5,8 @@ import {
   Camera,
   PlusCircle,
   FileText,
-  Building2,
   SlidersHorizontal,
   HardHat,
-  RotateCcw,
   LogOut,
   Menu,
   X,
@@ -16,20 +14,18 @@ import {
   ChevronDown,
   Activity,
   ArrowRightLeft,
-  Eye,
 } from 'lucide-react';
 
 export const Navbar: React.FC = () => {
   const {
-    currentUser,
-    userRole,
-    currentPage,
-    setCurrentPage,
-    loginAs,
-    logout,
-    resetDemoData,
-    reports,
-  } = useApp();
+  currentUser,
+  userRole,
+  currentPage,
+  setCurrentPage,
+  loginAs,
+  logout,
+  reports,
+} = useApp();
 
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [roleDropdownOpen, setRoleDropdownOpen] = useState(false);
@@ -281,20 +277,6 @@ export const Navbar: React.FC = () => {
                   </div>
                   {userRole === 'authority' && <CheckCircle2 className="h-3.5 w-3.5 text-blue-700" />}
                 </button>
-
-                <div className="my-1.5 border-t border-slate-100" />
-
-                <button
-                  id="reset-demo-data-btn"
-                  onClick={() => {
-                    resetDemoData();
-                    setRoleDropdownOpen(false);
-                  }}
-                  className="w-full flex items-center gap-2 rounded-lg px-2.5 py-1.5 text-xs text-slate-600 hover:bg-slate-100 transition"
-                >
-                  <RotateCcw className="h-3.5 w-3.5 text-slate-400" />
-                  Reset Demo Data
-                </button>
               </div>
             )}
           </div>
@@ -416,15 +398,6 @@ export const Navbar: React.FC = () => {
               className="flex-1 rounded-lg border border-slate-200 px-3 py-2 text-xs font-medium text-slate-700 hover:bg-slate-50 text-center"
             >
               Switch to {userRole === 'authority' ? 'Citizen' : 'Authority'}
-            </button>
-            <button
-              onClick={() => {
-                resetDemoData();
-                setMobileMenuOpen(false);
-              }}
-              className="rounded-lg border border-slate-200 px-3 py-2 text-xs text-slate-600 hover:bg-slate-50"
-            >
-              Reset
             </button>
           </div>
         </div>

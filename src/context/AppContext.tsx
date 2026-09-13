@@ -7,7 +7,6 @@ import {
   ReportStatus,
   Priority,
 } from '../types';
-import { INITIAL_CONTRACTORS, INITIAL_REPORTS } from '../data/mockData';
 import { apiClient, EmailAlertLog, DatabaseStatus } from '../../frontend/apiClient';
 
 interface UserProfile {
@@ -80,7 +79,6 @@ interface AppContextType {
     status: ReportStatus,
     notes?: string
   ) => Promise<void>;
-  resetDemoData: () => void;
   // Stats
   authorityStats: {
     totalReported: number;
@@ -103,8 +101,8 @@ const STORAGE_AUTH_USER_KEY = 'roadguard_user_v3';
 const STORAGE_PAGE_KEY = 'roadguard_page_v3';
 
 export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [reports, setReports] = useState<PotholeReport[]>(INITIAL_REPORTS);
-  const [contractors, setContractors] = useState<Contractor[]>(INITIAL_CONTRACTORS);
+  const [reports, setReports] = useState<PotholeReport[]>([]);
+  const [contractors, setContractors] = useState<Contractor[]>([]);
   const [emailAlerts, setEmailAlerts] = useState<EmailAlertLog[]>([]);
   const [lastEmailAlert, setLastEmailAlert] = useState<EmailAlertLog | null>(null);
   const [isEmailInboxOpen, setIsEmailInboxOpen] = useState(false);
@@ -140,29 +138,33 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   useEffect(() => {
     const initData = async () => {
       try {
-        const [fetchedReports, fetchedContractors, fetchedEmails, status] = await Promise.all([
+        const [
+          fetchedReports,
+          fetchedContractors,
+          fetchedEmails,
+          status,
+        ] = await Promise.all([
           apiClient.getReports(),
           apiClient.getContractors(),
           apiClient.getEmailAlerts(),
           apiClient.getDatabaseStatus(),
         ]);
 
-        if (fetchedReports && fetchedReports.length > 0) {
-          setReports(fetchedReports);
-        }
-        if (fetchedContractors && fetchedContractors.length > 0) {
-          setContractors(fetchedContractors);
-        }
-        if (fetchedEmails && fetchedEmails.length > 0) {
-          setEmailAlerts(fetchedEmails);
-        }
+        setReports(fetchedReports || []);
+        setContractors(fetchedContractors || []);
+        setEmailAlerts(fetchedEmails || []);
+
         if (status) {
           setDatabaseStatus(status);
         }
       } catch (err) {
-        console.warn('Backend sync failed, using initial memory dataset:', err);
+        console.error('Backend sync failed:', err);
+        setReports([]);
+        setContractors([]);
+        setEmailAlerts([]);
       }
     };
+
     initData();
   }, []);
 
@@ -260,41 +262,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
       return newReport.id;
     } catch (error) {
-      console.warn('API submission error, registering locally in memory:', error);
-      const timestamp = new Date().toLocaleString('en-IN');
-      const fallbackId = `RG-2026-${Math.floor(1000 + Math.random() * 9000)}`;
-      const fallbackReport: PotholeReport = {
-        id: fallbackId,
-        title: reportData.title,
-        description: reportData.description,
-        severity: reportData.severity,
-        confidenceScore: reportData.confidenceScore,
-        status: 'reported',
-        priority: reportData.priority || (reportData.severity === 'severe' ? 'critical' : 'medium'),
-        reportedAt: timestamp,
-        updatedAt: timestamp,
-        location: reportData.location,
-        imageUrl: reportData.imageUrl,
-        aiAnalysis: reportData.aiAnalysis,
-        reportedBy: {
-          name: currentUser ? currentUser.name : 'Rohan Sharma (Citizen)',
-          phone: currentUser ? currentUser.phone : '+91 98765 43210',
-          citizenId: currentUser ? currentUser.id : 'CIT-DEL-8821',
-        },
-        timeline: [
-          {
-            status: 'reported',
-            timestamp,
-            label: 'Citizen Report Lodged',
-            note: 'Logged and transmitted to Authority triage desk.',
-            actor: 'Citizen',
-          },
-        ],
-      };
-
-      setReports((prev) => [fallbackReport, ...prev]);
-      setSelectedReportId(fallbackId);
-      return fallbackId;
+      console.error('Report could not be saved to MongoDB:', error);
+      throw new Error('Report submission failed. Please try again.');
     }
   };
 
@@ -307,11 +276,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         currentUser?.name || 'Authority Desk'
       );
       setReports((prev) => prev.map((r) => (r.id === reportId ? updated : r)));
-    } catch (e) {
-      // client optimistic update
-      setReports((prev) =>
-        prev.map((r) => (r.id === reportId ? { ...r, status: 'verified' } : r))
-      );
+    } catch (error) {
+      console.error('Report verification failed:', error);
+      throw new Error('Could not verify the report. Please try again.');
     }
   };
 
@@ -334,21 +301,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         deadline
       );
       setReports((prev) => prev.map((r) => (r.id === reportId ? updated : r)));
-    } catch (e) {
-      setReports((prev) =>
-        prev.map((r) =>
-          r.id === reportId
-            ? {
-                ...r,
-                status: 'assigned',
-                assignedContractorId: contractorId,
-                assignedContractorName: contractorName,
-                priority,
-                deadline,
-              }
-            : r
-        )
-      );
+    } catch (error) {
+      console.error('Contractor assignment failed:', error);
+      throw new Error('Could not assign contractor. Please try again.');
     }
 
     setContractors((prev) =>
@@ -371,16 +326,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         currentUser?.name || 'Authority Desk'
       );
       setReports((prev) => prev.map((r) => (r.id === reportId ? updated : r)));
-    } catch (e) {
-      setReports((prev) =>
-        prev.map((r) => (r.id === reportId ? { ...r, status } : r))
-      );
+    } catch (error) {
+      console.error('Report status update failed:', error);
+      throw new Error('Could not update report status. Please try again.');
     }
-  };
-
-  const resetDemoData = () => {
-    setReports(INITIAL_REPORTS);
-    setContractors(INITIAL_CONTRACTORS);
   };
 
   // Authority stats
@@ -426,7 +375,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         verifyReport,
         assignContractor,
         updateReportStatus,
-        resetDemoData,
         authorityStats,
         citizenStats,
       }}
