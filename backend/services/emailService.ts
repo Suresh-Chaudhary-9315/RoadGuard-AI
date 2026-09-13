@@ -16,9 +16,9 @@ export async function sendAuthorityAlertEmail({
     'authority@nhai.gov.in';
 
   const fromAddress =
-    process.env.RESEND_FROM || 'RoadGuard AI <onboarding@resend.dev>';
+    process.env.RESEND_FROM || 'Terra Scan AI <onboarding@resend.dev>';
 
-  const subject = `[URGENT ROAD HAZARD] ${report.severity.toUpperCase()} Pothole Detected on ${report.location.roadName} (#${report.id})`;
+  const subject = `[UTSENT ROAD HAZARD] ${report.severity.toUpperCase()} Pothole Detected on ${report.location.roadName} (#${report.id})`;
 
   const timestamp = new Date().toLocaleString('en-IN', {
     day: '2-digit',
@@ -61,7 +61,7 @@ export async function sendAuthorityAlertEmail({
           <div class="header">
             <div style="display: flex; justify-content: space-between; align-items: center;">
               <div>
-                <h2 style="margin: 0; font-size: 18px; font-weight: 800;">RoadGuard AI — Hazard Alert</h2>
+                <h2 style="margin: 0; font-size: 18px; font-weight: 800;">Terra Scan AI — Hazard Alert</h2>
                 <div style="font-size: 11px; color: #94a3b8; margin-top: 4px;">Smart India Hackathon Highway Safety Dispatch</div>
               </div>
               <span class="badge">${report.severity}</span>
@@ -70,7 +70,7 @@ export async function sendAuthorityAlertEmail({
 
           <div class="content">
             <p style="font-size: 14px; line-height: 1.5; margin-top: 0;">
-              A road hazard report has been logged in RoadGuard AI and is ready for authority review.
+              A road hazard report has been logged in Terra Scan AI and is ready for authority review.
             </p>
 
             <div class="field-group">
@@ -119,7 +119,7 @@ export async function sendAuthorityAlertEmail({
           </div>
 
           <div class="footer">
-            Automated RoadGuard AI alert prepared for ${authorityEmail} at ${timestamp}
+            Automated Terra Scan AI alert prepared for ${authorityEmail} at ${timestamp}
           </div>
         </div>
       </body>

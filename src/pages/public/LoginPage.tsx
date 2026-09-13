@@ -42,7 +42,7 @@ export const LoginPage: React.FC = () => {
           onClick={() => setCurrentPage('landing')}
           className="inline-flex items-center gap-1 text-xs font-semibold text-slate-500 hover:text-slate-900"
         >
-          <ArrowLeft className="h-4 w-4" /> Back to RoadGuard AI
+          <ArrowLeft className="h-4 w-4" /> Back to Terra Scan AI
         </button>
 
         <div className="text-center">

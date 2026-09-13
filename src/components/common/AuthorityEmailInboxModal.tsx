@@ -161,7 +161,7 @@ export const AuthorityEmailInboxModal: React.FC<AuthorityEmailInboxModalProps> =
 
         {/* Footer */}
         <div className="flex items-center justify-between border-t border-slate-200 bg-slate-50 px-6 py-3 text-xs text-slate-500">
-          <span>RoadGuard AI &bull; Official Dispatch Record</span>
+          <span>Terra Scan AI &bull; Official Dispatch Record</span>
           <button
             onClick={onClose}
             className="rounded-xl bg-slate-800 px-4 py-1.5 font-bold text-white hover:bg-slate-900"

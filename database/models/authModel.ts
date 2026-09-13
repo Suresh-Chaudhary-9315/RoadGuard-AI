@@ -145,7 +145,7 @@ export const AuthModel = {
       phone: process.env.ADMIN_PHONE?.trim() || '',
       passwordHash: hashPassword(password),
       role: 'admin',
-      agency: 'RoadGuard AI Administration',
+      agency: 'Terra Scan AI Administration',
       active: true,
       createdAt: existing?.createdAt || now,
       updatedAt: now,

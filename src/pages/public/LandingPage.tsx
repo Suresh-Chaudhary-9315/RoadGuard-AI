@@ -29,7 +29,7 @@ export const LandingPage: React.FC = () => {
               Road damage reporting with <span className="text-blue-700">AI, GPS and accountable repair tracking.</span>
             </h1>
             <p className="mt-6 max-w-2xl text-base leading-7 text-slate-600 sm:text-lg">
-              RoadGuard AI connects citizens and verified road authorities through one controlled workflow: detect or report a pothole, geo-tag it, notify the authority, assign maintenance work, and track resolution.
+              Terra Scan AI connects citizens and verified road authorities through one controlled workflow: detect or report a pothole, geo-tag it, notify the authority, assign maintenance work, and track resolution.
             </p>
 
             <div className="mt-8 flex flex-wrap gap-3">

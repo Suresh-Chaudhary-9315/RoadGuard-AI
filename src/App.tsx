@@ -150,7 +150,7 @@ const AppContent: React.FC = () => {
 
       <footer className="border-t border-slate-200 bg-white py-6 text-xs text-slate-500">
         <div className="mx-auto flex max-w-7xl flex-col items-center justify-between gap-3 px-4 sm:flex-row sm:px-6 lg:px-8">
-          <div className="font-semibold text-slate-700">RoadGuard AI • Intelligent Road Asset Management</div>
+          <div className="font-semibold text-slate-700">Terra Scan AI • Intelligent Road Asset Management</div>
           <div className="flex items-center gap-4">
             <button onClick={() => setCurrentPage('landing')} className="hover:text-blue-700">Prototype Overview</button>
             {!currentUser && <button onClick={() => setCurrentPage('login')} className="hover:text-blue-700">Sign In</button>}

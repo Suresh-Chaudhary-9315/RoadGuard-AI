@@ -223,7 +223,7 @@ export const MiniMap: React.FC<MiniMapProps> = ({
                   fontSize="9"
                   fontWeight="600"
                 >
-                  {report.id.replace('RG-2026-', '#')}
+                  {report.id.replace('TS-2026-', '#')}
                 </text>
               </g>
             );

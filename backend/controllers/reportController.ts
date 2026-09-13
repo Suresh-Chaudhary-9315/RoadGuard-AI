@@ -67,7 +67,7 @@ export const ReportController = {
         return res.status(400).json({ success: false, error: 'A valid severity is required.' });
       }
 
-      const reportId = `RG-2026-${Math.floor(1000 + Math.random() * 9000)}`;
+      const reportId = `TS-2026-${Math.floor(1000 + Math.random() * 9000)}`;
       const timestamp = new Date().toLocaleString('en-IN', {
         day: '2-digit',
         month: 'short',

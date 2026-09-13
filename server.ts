@@ -39,8 +39,8 @@ async function startServer() {
   }
 
   app.listen(PORT, '0.0.0.0', () => {
-    console.log(`[RoadGuard AI] Fullstack server running on http://0.0.0.0:${PORT}`);
-    console.log('[RoadGuard AI] MongoDB, authenticated role access, and authority email dispatch active.');
+    console.log(`[Terra Scan AI] Fullstack server running on http://0.0.0.0:${PORT}`);
+    console.log('[Terra Scan AI] MongoDB, authenticated role access, and authority email dispatch active.');
   });
 }
 

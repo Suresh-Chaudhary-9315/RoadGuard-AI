@@ -39,7 +39,7 @@ export const RegisterPage: React.FC = () => {
     <div className="flex min-h-[calc(100vh-4rem)] items-center justify-center bg-slate-50 px-4 py-10">
       <div className="w-full max-w-md space-y-5">
         <button onClick={() => setCurrentPage('landing')} className="inline-flex items-center gap-1 text-xs font-semibold text-slate-500 hover:text-slate-900">
-          <ArrowLeft className="h-4 w-4" /> Back to RoadGuard AI
+          <ArrowLeft className="h-4 w-4" /> Back to Terra Scan AI
         </button>
 
         <div className="text-center">

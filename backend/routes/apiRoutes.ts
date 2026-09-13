@@ -13,7 +13,7 @@ router.get('/health', (req, res) => {
   res.json({
     status: 'online',
     timestamp: new Date().toISOString(),
-    service: 'RoadGuard AI Platform',
+    service: 'Terra Scan AI Platform',
   });
 });
 

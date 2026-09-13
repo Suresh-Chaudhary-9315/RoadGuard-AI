@@ -1,5 +1,5 @@
 {
-  "name": "RoadGuard AI",
+  "name": "Terra Scan AI",
   "description": "Intelligent pothole detection and road maintenance management platform connecting citizens, AI detection, and municipal road authorities.",
   "requestFramePermissions": [
     "camera",
