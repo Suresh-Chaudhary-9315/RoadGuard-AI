@@ -62,6 +62,12 @@ export const ReportModel = {
     return cursor.toArray();
   },
 
+  async getByCitizenId(citizenId: string): Promise<PotholeReportDoc[]> {
+    const { collection } = await getDatabase();
+    const cursor = await collection('reports').find({ 'reportedBy.citizenId': citizenId });
+    return cursor.toArray();
+  },
+
   async getById(id: string): Promise<PotholeReportDoc | null> {
     const { collection } = await getDatabase();
     return collection('reports').findOne({ id });

@@ -26,6 +26,19 @@ const DEFAULT_CITIZEN: UserProfile = {
   role: 'citizen',
 };
 
+
+const createCitizenId = (identity: string) => {
+  const normalized = identity.trim().toLowerCase();
+  let hash = 2166136261;
+
+  for (let i = 0; i < normalized.length; i += 1) {
+    hash ^= normalized.charCodeAt(i);
+    hash = Math.imul(hash, 16777619);
+  }
+
+  return `CIT-${(hash >>> 0).toString(36).toUpperCase()}`;
+};
+
 const DEFAULT_AUTHORITY: UserProfile = {
   id: 'AUTH-NHAI-04',
   name: 'Er. Rajesh Varma',
@@ -145,21 +158,30 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   const [selectedReportId, setSelectedReportId] = useState<string | null>(null);
 
-  // Initial fetch from MongoDB backend API
+  // Fetch data from MongoDB. Citizens receive only their own reports; authorities receive all reports.
   useEffect(() => {
+    let cancelled = false;
+
     const initData = async () => {
       try {
+        const citizenId = currentUser?.role === 'citizen' ? currentUser.id : undefined;
+        const reportsRequest = currentUser
+          ? apiClient.getReports(citizenId)
+          : Promise.resolve([] as PotholeReport[]);
+
         const [
           fetchedReports,
           fetchedContractors,
           fetchedEmails,
           status,
         ] = await Promise.all([
-          apiClient.getReports(),
+          reportsRequest,
           apiClient.getContractors(),
           apiClient.getEmailAlerts(),
           apiClient.getDatabaseStatus(),
         ]);
+
+        if (cancelled) return;
 
         setReports(fetchedReports || []);
         setContractors(fetchedContractors || []);
@@ -169,6 +191,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           setDatabaseStatus(status);
         }
       } catch (err) {
+        if (cancelled) return;
         console.error('Backend sync failed:', err);
         setReports([]);
         setContractors([]);
@@ -177,7 +200,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     };
 
     initData();
-  }, []);
+
+    return () => {
+      cancelled = true;
+    };
+  }, [currentUser?.id, currentUser?.role]);
 
   // Save user & page preference
   useEffect(() => {
@@ -213,19 +240,29 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   };
 
   const loginAs = (role: UserRole, customUser?: Partial<UserProfile>) => {
+    setReports([]);
+    setSelectedReportId(null);
+
     if (role === 'authority') {
       setCurrentUser({
         ...DEFAULT_AUTHORITY,
         ...customUser,
+        role: 'authority',
       });
       setCurrentPage('authority-dashboard');
-    } else {
-      setCurrentUser({
-        ...DEFAULT_CITIZEN,
-        ...customUser,
-      });
-      setCurrentPage('user-dashboard');
+      return;
     }
+
+    const identity = customUser?.email?.trim() || customUser?.phone?.trim();
+    const citizenId = customUser?.id || (identity ? createCitizenId(identity) : DEFAULT_CITIZEN.id);
+
+    setCurrentUser({
+      ...DEFAULT_CITIZEN,
+      ...customUser,
+      id: citizenId,
+      role: 'citizen',
+    });
+    setCurrentPage('user-dashboard');
   };
 
   const switchRole = (role: UserRole) => {
@@ -234,6 +271,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   const logout = () => {
     setCurrentUser(null);
+    setReports([]);
+    setSelectedReportId(null);
     setCurrentPage('landing');
   };
 
@@ -250,6 +289,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     customAuthorityEmail?: string;
   }): Promise<string> => {
     try {
+      if (!currentUser || currentUser.role !== 'citizen') {
+        throw new Error('A citizen account is required to submit a report.');
+      }
+
       const response = await apiClient.createReport({
         title: reportData.title,
         description: reportData.description,
@@ -259,6 +302,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         imageUrl: reportData.imageUrl,
         aiAnalysis: reportData.aiAnalysis,
         customAuthorityEmail: reportData.customAuthorityEmail,
+        reportedBy: {
+          name: currentUser.name,
+          phone: currentUser.phone,
+          citizenId: currentUser.id,
+        },
       });
 
       const newReport = response.report;

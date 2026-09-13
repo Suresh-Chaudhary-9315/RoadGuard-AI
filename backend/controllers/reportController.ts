@@ -6,7 +6,11 @@ import { sendAuthorityAlertEmail } from '../services/emailService';
 export const ReportController = {
   async getAllReports(req: Request, res: Response) {
     try {
-      const reports = await ReportModel.getAll();
+      const citizenId = typeof req.query.citizenId === 'string' ? req.query.citizenId.trim() : '';
+      const reports = citizenId
+        ? await ReportModel.getByCitizenId(citizenId)
+        : await ReportModel.getAll();
+
       return res.json({ success: true, count: reports.length, data: reports });
     } catch (error: any) {
       console.error('Error fetching reports:', error);
@@ -91,17 +95,30 @@ export const ReportController = {
       // 1. Save to MongoDB
       const createdReport = await ReportModel.create(newReport);
 
-      // 2. Automatically send email alert to road authority (Requested Feature!)
-      const emailNotification = await sendAuthorityAlertEmail({
+      // 2. Start authority email delivery without blocking report submission.
+      // SMTP can be slow or temporarily unreachable; the citizen report must still
+      // complete immediately after MongoDB has saved it.
+      void sendAuthorityAlertEmail({
         report: createdReport,
         recipientEmail: req.body.customAuthorityEmail,
-      });
+      })
+        .then((emailNotification) => {
+          console.log(
+            `[ReportController] Email dispatch for ${createdReport.id}: ${emailNotification.status}`
+          );
+        })
+        .catch((emailError: any) => {
+          console.error(
+            `[ReportController] Email dispatch failed for ${createdReport.id}:`,
+            emailError?.message || emailError
+          );
+        });
 
       return res.status(201).json({
         success: true,
-        message: 'Pothole report registered in MongoDB and email alert dispatched to Road Authority!',
+        message: 'Pothole report registered in MongoDB. Authority email dispatch started.',
         data: createdReport,
-        emailAlert: emailNotification,
+        emailAlert: null,
       });
     } catch (error: any) {
       console.error('Error creating report:', error);

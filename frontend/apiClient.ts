@@ -33,9 +33,10 @@ export const apiClient = {
     }
   },
 
-  async getReports(): Promise<PotholeReport[]> {
+  async getReports(citizenId?: string): Promise<PotholeReport[]> {
     try {
-      const res = await fetch('/api/reports');
+      const query = citizenId ? `?citizenId=${encodeURIComponent(citizenId)}` : '';
+      const res = await fetch(`/api/reports${query}`);
       const json = await res.json();
       if (json.success && Array.isArray(json.data)) {
         return json.data;
@@ -55,6 +56,11 @@ export const apiClient = {
     location: LocationData;
     aiAnalysis: any;
     customAuthorityEmail?: string;
+    reportedBy: {
+      name: string;
+      phone: string;
+      citizenId: string;
+    };
   }): Promise<{ report: PotholeReport; emailAlert: EmailAlertLog }> {
     const res = await fetch('/api/reports', {
       method: 'POST',

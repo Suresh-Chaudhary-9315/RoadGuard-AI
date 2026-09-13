@@ -139,6 +139,10 @@ export async function sendAuthorityAlertEmail({
           user: process.env.SMTP_USER,
           pass: process.env.SMTP_PASS,
         },
+        // Prevent an unreachable SMTP server from hanging indefinitely.
+        connectionTimeout: 10000,
+        greetingTimeout: 10000,
+        socketTimeout: 15000,
       });
 
       await transporter.sendMail({
